@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import mpld3
 import streamlit.components.v1 as components
-import pickle
 from sklearn.preprocessing import OrdinalEncoder,LabelEncoder
 from sklearn.preprocessing import Normalizer
 import xgboost as xgb
@@ -67,9 +66,7 @@ for col in df.columns:
         row.append(col_mode[col])
 df.loc[len(df)] = row     
 
-if st.button('Расчет') and len(df)>0:
-    xgb_model = pickle.load(open('xgb_reg.pkl', "rb"))
-    
+if st.button('Расчет') and len(df)>0:    
     col_numeric = data.columns[(data.dtypes==float) | (data.dtypes==int)]
     
     data = data.drop('pharmacyDistance', axis = 1)
@@ -84,6 +81,7 @@ if st.button('Расчет') and len(df)>0:
     for col in ['type', 'ownership', 'buildingMaterial', 'condition']:
       ord_enc = OrdinalEncoder().fit(data[[col]])
       df[col] = ord_enc.transform(df[[col]])
+      data[col] = ord_enc.transform(data[[col]])
     
     data_new = pd.get_dummies(data['city'])
     data[data_new.columns] = data_new
@@ -96,17 +94,26 @@ if st.button('Расчет') and len(df)>0:
     for col in ['hasParkingSpace', 'hasBalcony', 'hasElevator', 'hasSecurity','hasStorageRoom']:
       bn = LabelEncoder().fit(data[[col]])
       df[col] = bn.transform(df[[col]])
+      data[col] = bn.transform(data[[col]])
     
     
     col_numeric = list(col_numeric)
     col_numeric.remove('pharmacyDistance')
     X_data = data.drop('price', axis = 1)
     transformer = MinMaxScaler().fit(X_data[col_numeric])
+    X_data[col_numeric] = transformer.transform(X_data[col_numeric])
 
     y = data['price'].values
     transformer2 = StandardScaler().fit(y.reshape(-1, 1))
+    y = transformer2.transform(y.reshape(-1,1))
     
     df[col_numeric] = transformer.transform(df[col_numeric])
+    xgb_model = xgb.XGBRegressor(
+        objective='reg:squarederror',
+        max_depth=10,
+        learning_rate=0.01,
+        n_estimators=1000)
+    xgb_model.fit(X_data, y)
     y_pred = xgb_model.predict(df)
     y_pred = transformer2.inverse_transform(y_pred.reshape(-1,1))
     
