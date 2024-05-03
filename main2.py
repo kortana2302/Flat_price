@@ -99,9 +99,8 @@ if st.button('Расчет') and len(df)>0:
     
     col_numeric = list(col_numeric)
     col_numeric.remove('pharmacyDistance')
+    col_numeric.remove('price')
     X_data = data.drop('price', axis = 1)
-    col1.write(X_data.columns)
-    col1.write(col_numeric)
     transformer = MinMaxScaler().fit(X_data[col_numeric])
     X_data[col_numeric] = transformer.transform(X_data[col_numeric])
 
