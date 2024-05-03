@@ -1,5 +1,5 @@
 pandas==1.3.4
 streamlit==1.31.1
 mpld3==0.5.10
-sklearn==1.3.0
+scikit-learn==1.3.0
 xgboost==2.0.3
